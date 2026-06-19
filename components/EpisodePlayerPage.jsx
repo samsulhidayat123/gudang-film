@@ -57,6 +57,10 @@ function mergeServers(...serverGroups) {
     });
 }
 
+function serversOf(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 export default async function EpisodePlayerPage({
   type,
   id,
@@ -88,6 +92,8 @@ export default async function EpisodePlayerPage({
   }
 
   const episodeData = findEpisode(item, season, episode);
+  const storedEpisodeServers = serversOf(episodeData?.playbackServers);
+  const storedItemServers = serversOf(item?.playbackServers);
   
   let idflixServers = [];
   let playbackStatus = "no_server";
@@ -99,7 +105,14 @@ export default async function EpisodePlayerPage({
   }
   const vidsrcTvId = await getVidSrcTvId(id, item);
   const vidsrcServers = createVidSrcEpisodeServers(vidsrcTvId, season, episode);
-  const finalServers = sortServers(mergeServers(idflixServers, vidsrcServers));
+  const finalServers = sortServers(
+    mergeServers(
+      storedEpisodeServers,
+      storedItemServers,
+      idflixServers,
+      vidsrcServers
+    )
+  );
 
   const backHref = `/${type}/${item.slug}`;
   const title = `${item.title} Episode ${episode}`;
