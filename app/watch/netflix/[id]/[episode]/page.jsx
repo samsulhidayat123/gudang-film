@@ -1,11 +1,11 @@
 import EpisodePlayerPage from "@/components/EpisodePlayerPage";
 
-export default async function DracinWatchPage({ params }) {
+export default async function NetflixWatchPage({ params }) {
   const { id, episode } = await params;
 
   return (
     <EpisodePlayerPage
-      type="dracin"
+      type="netflix"
       id={id}
       episode={episode}
     />

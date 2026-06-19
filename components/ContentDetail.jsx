@@ -19,9 +19,17 @@ function episodeCountOf(item) {
   const count = Number(item?.totalEpisodes || item?.chapterCount || 0);
   if (Number.isFinite(count) && count > 0) return Math.min(count, 60);
 
-  // Jika punya ID TMDB tapi tidak ada info episode, minimal tampilkan 1 tombol (S1 E1) agar bisa di-play
-  const hasExternalId = Boolean(item?.vidsrcId || item?.tmdbId || item?.imdbId || item?.source === "tmdb");
-  return hasExternalId ? 1 : 0;
+  const hasPlayableIdentity = Boolean(
+    item?.vidsrcId ||
+      item?.tmdbId ||
+      item?.imdbId ||
+      item?.target_id ||
+      item?.targetId ||
+      item?.slug ||
+      item?.id ||
+      item?.source === "tmdb"
+  );
+  return hasPlayableIdentity ? 1 : 0;
 }
 
 function genresOf(item) {
@@ -58,6 +66,28 @@ function groupedEpisodesOf(item, episodeCount) {
   }, new Map());
 }
 
+function watchIdOf(item) {
+  return (
+    item.playbackTargetId ||
+    item.target_id ||
+    item.targetId ||
+    item.vidsrcId ||
+    item.tmdbId ||
+    item.imdbId ||
+    item.id ||
+    item.slug ||
+    item._id
+  );
+}
+
+function watchTypeOf(item) {
+  if (item.type === "series") return "series";
+  if (["anime", "dracin", "kdrama", "netflix"].includes(item.type)) {
+    return item.type;
+  }
+  return "series";
+}
+
 function isEpisodePlayable(episode) {
   if (!episode || episode.generated) return false;
   if (episode.playable === false) return false;
@@ -76,16 +106,7 @@ export default function ContentDetail({ item, expectedType }) {
   const isCineb = item.source === "cineb";
   const poster = getPosterUrl(item.poster, "/placeholder.png");
   const sourceUrl = item.detail_url || item.source_url || item.playbackSourceUrl || null;
-  const watchTargetId =
-    item.playbackTargetId ||
-    item.target_id ||
-    item.targetId ||
-    item.vidsrcId ||
-    item.tmdbId ||
-    item.imdbId ||
-    item.id ||
-    item.slug ||
-    item._id;
+  const watchTargetId = watchIdOf(item);
   const serverCount = Array.isArray(item.playbackServers)
     ? item.playbackServers.length
     : 0;
@@ -298,15 +319,7 @@ export default function ContentDetail({ item, expectedType }) {
                       {episodes.map((episode) => {
                         const episodeNumber = episode.episodeNumber;
                         const playable = isEpisodePlayable(episode);
-                        const seriesWatchId =
-                          item.target_id ||
-                          item.targetId ||
-                          item.playbackTargetId ||
-                          item.imdbId ||
-                          item.tmdbId ||
-                          item.slug ||
-                          item.id ||
-                          item._id;
+                        const seriesWatchId = watchIdOf(item);
 
                         const resolvedSeriesWatchId =
                           String(seriesWatchId || "").includes("euphoria")
@@ -317,10 +330,11 @@ export default function ContentDetail({ item, expectedType }) {
                           String(resolvedSeriesWatchId || "")
                         );
 
+                        const watchType = watchTypeOf(item);
                         const href =
-                          item.type === "series"
+                          watchType === "series"
                             ? `/watch/series/${safeSeriesWatchId}/${seasonNumber}/${episodeNumber}`
-                            : `/watch/${item.type}/${safeSeriesWatchId}/${episodeNumber}`;
+                            : `/watch/${watchType}/${safeSeriesWatchId}/${episodeNumber}`;
                         const className =
                           "flex aspect-video min-h-12 items-center justify-center rounded-sm border text-sm font-black transition";
 
