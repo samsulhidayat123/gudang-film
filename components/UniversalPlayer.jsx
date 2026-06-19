@@ -13,8 +13,11 @@ function normalizeServers(servers) {
   const seen = new Set();
 
   return sortServers(servers).filter((server) => {
-    if (seen.has(server.embedUrl)) return false;
-    seen.add(server.embedUrl);
+    const key = server.embedUrl || server.url;
+
+    if (!key || seen.has(key)) return false;
+
+    seen.add(key);
     return true;
   });
 }
@@ -102,7 +105,10 @@ export default function UniversalPlayer({
   );
   const safeSourceUrl = useMemo(() => sanitizeSourceUrl(sourceUrl), [sourceUrl]);
   const sources = [
-    ...playableServers.map((server) => ({ type: "embed", ...server })),
+    ...playableServers.map((server) => ({
+      type: server.embedUrl ? "embed" : "direct",
+      ...server,
+    })),
     ...playableDirectSources.map((source) => ({ type: "direct", ...source })),
   ];
   const [activeIndex, setActiveIndex] = useState(0);
